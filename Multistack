@@ -1,0 +1,565 @@
+# MultiStack.py
+# contains some back-end functionality for writing and displaying histograms to the user
+import ROOT as r
+
+import sys
+sys.path.insert(0, "backend") # allow code to be imported from subdirectory
+
+from ShowHistogram import histogramsFromFile
+
+def plotStackedHist(legendx = "",SherpaName = "",HerwigName = "", dataName = "",PPName = "",hist_id = "",title = "",x_label = "",y_label = "",HerwigMean = "", HerwigRms = "", HerwigEntries = "", PPMean = "",PPRms = "",PPEntries = "",DATAMean = "",DATARms = "",DATAEntries = "",SherpaMean = "",SherpaEntries = "",SherpaRms = "",y_max = "", ratio_y_max = "", ratio_y_min = ""):
+    
+
+    showLegend = True
+    try:
+        # Get DATA histogram
+        dataString=dataName.replace("StackedPlots/FINALPLOTS/","").replace(".root","")
+        #Below choose whether running on two MC root files or one MC and one data
+        #dataFile = r.TFile.Open("out/"+dataString+".root","READ")
+        dataFile = r.TFile.Open("StackedPlots/FINALPLOTS/"+dataString+".root","READ")
+        #dataFile = r.TFile.Open("../DATA/out/"+dataString+".root","READ")
+        dataHist = histogramsFromFile(dataFile)[0][hist_id]
+        dataHist.SetDirectory(0)
+        #ratio = histogramsFromFile(dataFile)[0][hist_id]
+        #ratio.SetDirectory(0)
+        dataFile.Close()
+    
+    #Handles Errors
+    except ReferenceError: # Occurs when SherpaName = "",dataName is not correct
+        print("File out/"+dataString+".root could not be openned. Check it exists.")
+        return None,None
+    
+    except IndexError: # Occurs when hist_n is too large
+        print("hist_n out of range for file: out/"+dataString+".root")
+        return None,None
+        
+     
+    # Make a canvas and stacked histogram
+    canvasstack = r.TCanvas(hist_id)
+    canvasstack.cd()
+    #hs = r.THStack("hs","Stacked plot")
+    
+    latex = r.TLatex ()
+    latex.SetNDC()
+    latex.SetTextSize(0.03)
+    # Configure and plot the 2lep data
+    dataHist.SetTitle(title)
+    dataHist.GetXaxis().SetTitle(x_label)
+    dataHist.GetYaxis().SetTitle(y_label)
+    dataHist.GetYaxis().SetTitleSize(15)
+    dataHist.GetYaxis().SetTitleOffset(0.8)
+    dataHist.SetStats(0)
+    dataHist.SetLineColor(r.kBlack)
+    dataHist.SetLineWidth(1)
+    dataHist.GetYaxis().SetRangeUser(0,y_max)
+
+    #ratio.GetYaxis().SetRangeUser(ratio_y_min,ratio_y_max)
+
+    colourArray = [r.kRed,r.kBlue,r.kGreen,r.kYellow]
+    
+    #Loops around each provided MC and stacks onto hs  
+    try:
+    # Get MC histograms
+        PPString=PPName.replace("StackedPlots/FINALPLOTS/","").replace(".root","")
+        #file = r.TFile.Open("out/"+MCString+".root","READ")
+        file = r.TFile.Open("StackedPlots/FINALPLOTS/"+PPString+".root","READ")
+        ppHist = histogramsFromFile(file)[0][hist_id]
+        ppHist.SetDirectory(0)
+        ppratio = histogramsFromFile(file)[0][hist_id]
+        ppratio.SetDirectory(0)
+        file.Close()
+        
+    # Handles Errors
+    except ReferenceError: # Occurs when MCNames[i] is not correct
+        print("File out/"+PPString+".root could not be openned. Check it exists.")
+        return None,None
+    
+    except IndexError: # Occurs when hist_id does not exist
+        print("hist_id does not exist for file: out/"+PPString+".root")
+        return None,None
+
+
+    ppHist.SetLineColor(colourArray[1])
+    ppHist.SetFillColor(colourArray[1])
+    ppHist.Scale(ppHist.Integral()/dataHist.Integral())
+    ppratio.Scale(ppratio.Integral()/dataHist.Integral())
+    ppHist.SetStats(0)
+
+
+    try:
+        # Get Sherpa histogram
+        SherpaString=SherpaName.replace("StackedPlots/FINALPLOTS/","").replace(".root","")
+        #Below choose whether running on two MC root files or one MC and one data
+        SherpaFile = r.TFile.Open("StackedPlots/FINALPLOTS/"+SherpaString+".root","READ")
+        SherpaHist = histogramsFromFile(SherpaFile)[0][hist_id]
+        SherpaHist.SetDirectory(0)
+        Sherparatio = histogramsFromFile(SherpaFile)[0][hist_id]
+        Sherparatio.SetDirectory(0)
+        SherpaFile.Close()
+    
+    #Handles Errors
+    except ReferenceError: # Occurs when SherpaName = "",dataName is not correct
+        print("File out/"+SherpaString+".root could not be openned. Check it exists.")
+        return None,None
+    
+    except IndexError: # Occurs when hist_n is too large
+        print("hist_n out of range for file: out/"+SherpaString+".root")
+        return None,None
+    
+    SherpaHist.SetLineColor(colourArray[2])
+    SherpaHist.SetFillColor(colourArray[2])
+    SherpaHist.Scale(SherpaHist.Integral()/dataHist.Integral())
+    Sherparatio.Scale(Sherparatio.Integral()/dataHist.Integral())
+    SherpaHist.SetStats(0)
+    
+    ppratio.GetYaxis().SetRangeUser(ratio_y_min,ratio_y_max)
+    ppratio.Divide(dataHist)
+    ppratio.SetLineColor(r.kBlue)
+    ppratio.SetStats(0)
+
+    Sherparatio.GetYaxis().SetRangeUser(ratio_y_min,ratio_y_max)
+    Sherparatio.Divide(dataHist)
+    Sherparatio.SetLineColor(r.kGreen)
+    Sherparatio.SetStats(0)
+    '''
+    try:
+        # Get Herwig histogram
+        HerwigString=HerwigName.replace("StackedPlots/FINALPLOTS/","").replace(".root","")
+        #Below choose whether running on two MC root files or one MC and one data
+        HerwigFile = r.TFile.Open("StackedPlots/FINALPLOTS/"+HerwigString+".root","READ")
+        HerwigHist = histogramsFromFile(HerwigFile)[0][hist_id]
+        HerwigHist.SetDirectory(0)
+        Herwigratio = histogramsFromFile(HerwigFile)[0][hist_id]
+        Herwigratio.SetDirectory(0)
+        HerwigFile.Close()
+    
+    #Handles Errors
+    except ReferenceError: # Occurs when SherpaName = "",dataName is not correct
+        print("File out/"+HerwigString+".root could not be openned. Check it exists.")
+        return None,None
+    
+    except IndexError: # Occurs when hist_n is too large
+        print("hist_n out of range for file: out/"+HerwigString+".root")
+        return None,None
+
+    HerwigHist.SetLineColor(colourArray[3])
+    HerwigHist.SetFillColor(colourArray[3])
+    HerwigHist.Scale(dataHist.Integral()/HerwigHist.Integral())
+    Herwigratio.Scale(Herwigratio.Integral()/dataHist.Integral())
+    HerwigHist.SetStats(0)
+
+    Herwigratio.GetYaxis().SetRangeUser(ratio_y_min,ratio_y_max)
+    Herwigratio.Divide(dataHist)
+    Herwigratio.SetLineColor(r.kYellow)
+    Herwigratio.SetStats(0)
+    '''
+
+
+    # Plot the canvas
+    canvasstack.Clear()
+
+    pad1 = r.TPad("pad1","pad1",0,0.4,1,1)
+    pad1.Draw()
+    pad1.cd()
+    dataHist.Draw("h")
+    ppHist.Draw("pe,same")
+    SherpaHist.Draw("pe,same")
+    #HerwigHist.Draw("pe,same")
+
+    legendx = r.TLegend(0.4,0.6,0.6,0.7)
+    legendx.AddEntry(ppHist,"PowhegPythia")
+    legendx.AddEntry(dataHist,"Data")
+    legendx.AddEntry(SherpaHist, "Sherpa")
+    #legendx.AddEntry(HerwigHist, "Herwig")
+    legendx.SetLineWidth(0)
+    legendx.Draw("pe,same")
+
+    latex.DrawText(0.6,0.8,"PowhegPythia Mean = " + str(PPMean))
+    latex.DrawText(0.6,0.75,"Sherpa Mean = " + str(SherpaMean))
+    #latex.DrawText(0.6,0.3,"Herwig Mean = " + str(HerwigMean))
+    latex.DrawText(0.6,0.7,"ATLAS Data Mean = " + str(DATAMean))
+    latex.DrawText(0.6,0.65,"PowhegPythia Std = " + str(PPRms))
+    latex.DrawText(0.6,0.6, "Sherpa Std = " + str(SherpaRms))
+    #latex.DrawText(0.6,0.25,"Herwig Std = " + str(HerwigRms))
+    latex.DrawText(0.6,0.55,"ATLAS Data Std = " + str(DATARms))
+    latex.DrawText(0.6,0.5,"PowhegPythia Entries = " + str(PPEntries))
+    latex.DrawText(0.6,0.45,"Sherpa Entries = " + str(SherpaEntries))
+    #latex.DrawText(0.6,0.35,"Herwig Entries = " + str(HerwigEntries))
+    latex.DrawText(0.6,0.4,"ATLAS Data Entries = " + str(DATAEntries))
+
+    canvasstack.cd()
+    pad2 = r.TPad("pad2","pad2",0,0,1,0.4)
+    pad2.Draw()
+    pad2.cd()
+    ppratio.Draw("pe")
+    Sherparatio.Draw("pe,same")
+
+    legend2 = r.TLegend(0.7,0.7,0.9,0.9)
+    legend2.AddEntry(ppratio, "PowhegPythia/Data")
+    legend2.AddEntry(Sherparatio, "Sherpa/Data")
+    #legend2.AddEntry(Herwigratio, "Herwig/Data")
+    legend2.SetLineWidth(0)
+    legend2.Draw("pe, same")
+
+
+    #Making the Plot look nice
+    pad1.SetBottomMargin(0)
+    pad2.SetTopMargin(0)
+    pad2.SetBottomMargin(0.25)
+
+    ppHist.SetTitle(title)
+    ppHist.GetXaxis().SetLabelSize(0)
+    ppHist.GetXaxis().SetTitleSize(0)
+    ppHist.GetYaxis().SetTitle(y_label)
+    #ppHist.GetYaxis().SetTitleSize(0.01)
+    ppHist.GetYaxis().SetLabelSize(0.08)
+    #ppHist.GetYaxis().SetTitleOffset(1.5) 
+    #dataHist.GetYaxis().SetTitleOffset(1.5)
+
+    SherpaHist.SetTitle(title)
+    SherpaHist.GetXaxis().SetLabelSize(0)
+    SherpaHist.GetXaxis().SetTitleSize(0)
+    SherpaHist.GetYaxis().SetTitle(y_label)
+    SherpaHist.GetYaxis().SetLabelSize(0.08)
+    '''
+    HerwigHist.SetTitle(title)
+    HerwigHist.GetXaxis().SetLabelSize(0)
+    HerwigHist.GetXaxis().SetTitleSize(0)
+    HerwigHist.GetYaxis().SetTitle(y_label)
+    HerwigHist.GetYaxis().SetLabelSize(0.08)
+    '''
+
+    ppratio.SetTitle("Ratio of MC sets to Data")
+    ppratio.GetXaxis().SetTitleSize(15)
+    ppratio.GetYaxis().SetTitleSize(15)
+    ppratio.GetXaxis().SetLabelSize(0.08)
+    ppratio.GetYaxis().SetLabelSize(0.08)
+    ppratio.GetYaxis().SetTitle("Ratio")
+    ppratio.GetXaxis().SetTitleOffset(1.3)
+    ppratio.GetYaxis().SetTitleOffset(0.6)
+    ppratio.GetXaxis().SetTitle(x_label)
+
+    Sherparatio.GetXaxis().SetTitleSize(15)
+    Sherparatio.GetYaxis().SetTitleSize(15)
+    Sherparatio.GetXaxis().SetLabelSize(0.08)
+    Sherparatio.GetYaxis().SetLabelSize(0.08)
+    Sherparatio.GetXaxis().SetTitleOffset(1.3)
+    Sherparatio.GetYaxis().SetTitleOffset(0.6)
+    Sherparatio.GetXaxis().SetTitle(x_label)
+    '''
+    Herwigratio.GetXaxis().SetTitleSize(15)
+    Herwigratio.GetYaxis().SetTitleSize(15)
+    Herwigratio.GetXaxis().SetLabelSize(0.08)
+    Herwigratio.GetYaxis().SetLabelSize(0.08)
+    Herwigratio.GetXaxis().SetTitleOffset(1.3)
+    Herwigratio.GetYaxis().SetTitleOffset(0.6)
+    Herwigratio.GetXaxis().SetTitle(x_label)
+    '''
+    
+    canvasstack.Draw()
+    
+    #Shows the legend if showLegend == True
+    if showLegend:
+        return canvasstack,(ppHist,legendx, legend2)
+    else: # Legend not plotted if not returned
+        return canvasstack,ppHist
+
+    if showLegend:
+        return canvasstack, (SherpaHist, legendx, legend2)
+    else:
+        return canvasstack,SherpaHist
+    '''
+    if showLegend:
+        return canvasstack, (HerwigHist, legendx, legend2)
+    else:
+        return canvasstack,SherpaHist
+    '''
+    
+
+
+#SUM TRK PT STACKS
+canvas1,legend1 = plotStackedHist(legendx = "legend1", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "sum_trk_pt_tight_Zpt<1",
+                           title="Comparison of Sum Track Pt with All Cuts in Zpt < 1 GeV region",
+                           x_label = "Sum Track Pt / GeV",
+                           y_label = "Number of entries / 5 GeV",
+                           PPMean = "29.71 GeV",PPRms = "22.48 GeV",PPEntries = 555900,DATAMean = "27.98 GeV",DATARms = "21.73 GeV",DATAEntries = 554570,SherpaMean = "28.20 GeV",SherpaRms = "21.31 GeV",SherpaEntries = "506662", HerwigMean = "4.854 GeV", HerwigRms = "10.97 GeV", HerwigEntries = "4570", y_max = 150000, ratio_y_max = 2, ratio_y_min = 0
+                           )
+
+canvas2,legend2 = plotStackedHist(legendx = "legend2", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "sum_trk_pt_tight_Zpt1-5",
+                           title="Comparison of Sum Track Pt with All Cuts in 1 < Zpt < 5 GeV region",
+                           x_label = "Sum Track Pt / GeV",
+                           y_label = "Number of entries / 5 GeV",
+                           PPMean = "30.29 GeV",PPRms = "22.49 GeV",PPEntries = 1884819,DATAMean = "28.87 GeV",DATARms = "21.86 GeV",DATAEntries = 1865597,SherpaMean = "27.82 GeV",SherpaRms = "21.15 GeV",SherpaEntries = "1804991", HerwigMean = "4.844 GeV", HerwigRms = "10.73 GeV", HerwigEntries = "3501", y_max = 300000, ratio_y_max = 2, ratio_y_min = 0
+                           )
+
+canvas3,legend3 = plotStackedHist(legendx = "legend3", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "sum_trk_pt_tight_Zpt>5",
+                           title="Comparison of Sum Track Pt with All Cuts in Zpt > 5 GeV region",
+                           x_label = "Sum Track Pt / GeV",
+                           y_label = "Number of entries / 5 GeV",
+                           PPMean = "34.45 GeV", PPRms = "23.47 GeV",PPEntries = 1723248,DATAMean = "34.65 GeV",DATARms = "24.20 GeV",DATAEntries = 1763403,SherpaMean = "31.80 GeV",SherpaRms = "22.30 GeV",SherpaEntries = "1727123", HerwigMean = "5.275 GeV", HerwigRms = "11.17 GeV", HerwigEntries = "49", y_max = 300000, ratio_y_max = 2, ratio_y_min = 0
+                           )
+
+canvas4,legend4 = plotStackedHist(legendx = "legend4", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "sum_trk_pt_tight_Zpt<1_NTrk0-5",
+                           title="Comparison of Mean Track Pt with All Cuts in Zpt < 1 GeV region for events with 0-5 tracks",
+                           x_label = "Sum Track Pt / GeV",
+                           y_label = "Number of entries / 5 GeV",
+                           PPMean = "2.218 GeV", PPRms = "1.707 GeV",PPEntries = 59875,DATAMean = "2.600 GeV",DATARms = "1.782 GeV",DATAEntries = 53044,SherpaMean = "2.543 GeV",SherpaRms = "1.994 GeV",SherpaEntries = "88727", HerwigMean = "0.5919 GeV", HerwigRms = "1.160 GeV", HerwigEntries = "3549", y_max = 50000, ratio_y_max = 10, ratio_y_min = 0
+                           )
+
+canvas5,legend5 = plotStackedHist(legendx = "legend5", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "sum_trk_pt_tight_Zpt1-5_NTrk0-5",
+                           title="Comparison of Mean Track Pt with All Cuts in 1 < Zpt < 5 GeV region for events with 0-5 tracks",
+                           x_label = "Sum Track Pt / GeV",
+                           y_label = "Number of entries / 5 GeV",
+                           PPMean = "2.387 GeV", PPRms = "1.753 GeV",PPEntries = 186537,DATAMean = "2.791 GeV",DATARms = "1.803 GeV",DATAEntries = 156337,SherpaMean = "2.603 GeV",SherpaRms = "1.958 GeV",SherpaEntries = "307173", HerwigMean = "0.6113 GeV", HerwigRms = "1.183 GeV", HerwigEntries = "2693", y_max = 160000, ratio_y_max = 10, ratio_y_min = 0
+                           )
+
+canvas6,legend6 = plotStackedHist(legendx = "legend6", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "sum_trk_pt_tight_Zpt>5_NTrk0-5",
+                           title="Comparison of Mean Track Pt with All Cuts in Zpt > 5 GeV region for events with 0-5 tracks",
+                           x_label = "Sum Track Pt / GeV",
+                           y_label = "Number of entries / 5 GeV",
+                           PPMean = "3.359 GeV", PPRms = "2.549 GeV",PPEntries = 108015,DATAMean = "3.560 GeV",DATARms = "2.357 GeV",DATAEntries = 81746,SherpaMean = "3.443 GeV",SherpaRms = "2.527 GeV",SherpaEntries = "193695", HerwigMean = "0.5922 GeV", HerwigRms = "1.247 GeV", HerwigEntries = "39",y_max = 100000, ratio_y_max = 10, ratio_y_min = 0
+                           )            
+
+# MEAN TRK PT STACKS
+canvas7,legend7 = plotStackedHist(legendx = "legend7", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "mean_trk_pt_tight_Zpt<1",
+                           title="Comparison of Mean Track Pt with All Cuts in Zpt < 1 GeV region",
+                           x_label = "Mean Track Pt / GeV",
+                           y_label = "Number of entries / 0.1 GeV",
+                           PPMean = "1.047 GeV", PPRms = "0.2081 GeV",PPEntries = 555900,DATAMean = "1.059 GeV",DATARms = "0.2167 GeV",DATAEntries = 554570,SherpaMean = "1.090 GeV",SherpaRms = "0.2520 GeV",SherpaEntries = "506662", HerwigMean = "0.9097 GeV", HerwigRms = "0.2920 GeV", HerwigEntries = "4570", y_max = 150000, ratio_y_max = 2, ratio_y_min = 0
+                           )   
+
+canvas8,legend8 = plotStackedHist(legendx = "legend8", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "mean_trk_pt_tight_Zpt1-5",
+                           title="Comparison of Mean Track Pt with All Cuts in 1 < Zpt < 5 GeV region",
+                           x_label = "Mean Track Pt / GeV",
+                           y_label = "Number of entries / 0.1 GeV",
+                           PPMean = "1.054 GeV", PPRms = "0.2082 GeV",PPEntries = 1884817,DATAMean = "1.070 GeV",DATARms = "0.2214 GeV",DATAEntries = 1865597,SherpaMean = "1.093 GeV",SherpaRms = "0.2546 GeV",SherpaEntries = "1804991", HerwigMean = "0.9049 GeV", HerwigRms = "0.2838 GeV", HerwigEntries = "3501", y_max = 500000, ratio_y_max = 2, ratio_y_min = 0
+                           )
+
+canvas9,legend9 = plotStackedHist(legendx = "legend8", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "mean_trk_pt_tight_Zpt>5",
+                           title="Comparison of Mean Track Pt with All Cuts in Zpt > 5 GeV region",
+                           x_label = "Mean Track Pt / GeV",
+                           y_label = "Number of entries / 0.1 GeV",
+                           PPMean = "1.138 GeV", PPRms = "0.2823 GeV",PPEntries = 1723249,DATAMean = "1.176 GeV",DATARms = "0.3199 GeV",DATAEntries = 1763403,SherpaMean = "1.187 GeV",SherpaRms = "0.3203 GeV",SherpaEntries = "1727124", HerwigMean = "0.9496 GeV", HerwigRms = "0.3617 GeV", HerwigEntries = "49", y_max = 500000, ratio_y_max = 2, ratio_y_min = 0
+                           )
+
+canvas10,legend10 = plotStackedHist(legendx = "legend10", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "mean_trk_pt_tight_Zpt<1_NTrk0-5",
+                           title="Comparison of Mean Track Pt with All Cuts in Zpt < 1 GeV region for events with 0-5 tracks",
+                           x_label = "Mean Track Pt / GeV",
+                           y_label = "Number of entries / 0.1 GeV",
+                           PPMean = "0.8437 GeV", PPRms = "0.2815 GeV",PPEntries = 59875,DATAMean = "0.8900 GeV",DATARms = "0.2905 GeV",DATAEntries = 53044,SherpaMean = "0.9098 GeV",SherpaRms = "0.3601 GeV",SherpaEntries = "88727", HerwigMean = "0.8193 GeV", HerwigRms = "0.3109 GeV", HerwigEntries = "3549",y_max = 40000, ratio_y_max = 10, ratio_y_min = 0
+                           )
+
+canvas11,legend11 = plotStackedHist(legendx = "legend11", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "mean_trk_pt_tight_Zpt1-5_NTrk0-5",
+                           title="Comparison of Mean Track Pt with All Cuts in 1 < Zpt < 5 GeV region for events with 0-5 tracks",
+                           x_label = "Mean Track Pt / GeV",
+                           y_label = "Number of entries / 0.1 GeV",
+                           PPMean = "0.8677 GeV", PPRms = "0.3048 GeV",PPEntries = 186537,DATAMean = "0.9088 GeV",DATARms = "0.3075 GeV",DATAEntries = 156337,SherpaMean = "0.9199 GeV",SherpaRms = "0.3585 GeV",SherpaEntries = "307173", HerwigMean = "0.8158 GeV", HerwigRms = "0.2950 GeV", HerwigEntries = "2693", y_max = 150000, ratio_y_max = 10, ratio_y_min = 0
+                           )
+
+canvas12,legend12 = plotStackedHist(legendx = "legend12", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "mean_trk_pt_tight_Zpt>5_NTrk0-5",
+                           title="Comparison of Mean Track Pt with All Cuts in Zpt > 5 GeV region for events with 0-5 tracks",
+                           x_label = "Mean Track Pt / GeV",
+                           y_label = "Number of entries / 0.1 GeV",
+                           PPMean = "1.032 GeV", PPRms = "0.4751 GeV",PPEntries = 108015,DATAMean = "1.031 GeV",DATARms = "0.4350 GeV",DATAEntries = 81746,SherpaMean = "1.059 GeV",SherpaRms = "0.4736 GeV",SherpaEntries = "193695", HerwigMean = "0.8658 GeV", HerwigRms = "0.3749 GeV", HerwigEntries = "39", y_max = 100000, ratio_y_max = 10, ratio_y_min = 0
+                           )
+
+# TRK N
+canvas13,legend13 = plotStackedHist(legendx = "legend13", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "trk_tight_n_Zpt<1",
+                           title="Comparison of Number of Tracks with All Cuts in Zpt < 1 GeV region",
+                           x_label = "Number of Tracks",
+                           y_label = "Number of entries / Bin",
+                           PPMean = 26.21, PPRms = 17.17,PPEntries = 555900,DATAMean = 24.58,DATARms = 16.33,DATAEntries = 554570,SherpaMean = "24.43",SherpaRms = "16.35",SherpaEntries = "506662", HerwigMean = "4.670", HerwigRms = "9.524", HerwigEntries = "4570", y_max = 30000, ratio_y_max = 2, ratio_y_min = 0
+                           )
+
+canvas14,legend14 = plotStackedHist(legendx = "legend14", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "trk_tight_n_Zpt1-5",
+                           title="Comparison of Number of Tracks with All Cuts in 1 < Zpt < 5 GeV region",
+                           x_label = "Number of Tracks",
+                           y_label = "Number of entries / Bin",
+                           PPMean = 26.65, PPRms = 17.11,PPEntries = 1884819,DATAMean = 25.18,DATARms = 16.31,DATAEntries = 1865597,SherpaMean = "24.06",SherpaRms = "16.23",SherpaEntries = "1804991", HerwigMean = "4.710", HerwigRms = "9.443", HerwigEntries = "3501",y_max = 70000, ratio_y_max = 2, ratio_y_min = 0
+                           )
+
+canvas15,legend15 = plotStackedHist(legendx = "legend15", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "trk_tight_n_Zpt>5",
+                           title="Comparison of Number of Tracks with All Cuts in Zpt > 5 GeV region",
+                           x_label = "Number of Tracks",
+                           y_label = "Number of entries / Bin",
+                           PPMean = 28.77, PPRms = 17.07,PPEntries = 1723247,DATAMean = 27.97,DATARms = 16.40,DATAEntries = 1763403,SherpaMean = "25.87",SherpaRms = "16.24",SherpaEntries = "1727123", HerwigMean = "5.022", HerwigRms = "10.14", HerwigEntries = "49", y_max = 60000, ratio_y_max = 2, ratio_y_min = 0
+                           )
+
+canvas16,legend16 = plotStackedHist(legendx = "legend16", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "trk_pt_tight_Zpt<1",
+                           title="Comparison of Track Pt with All Cuts in Zpt < 1 GeV region",
+                           x_label = "Track Pt / GeV",
+                           y_label = "Number of entries / 0.1 GeV",
+                           PPMean = "1.086 GeV", PPRms = "0.6505 GeV",PPEntries = 16153871,DATAMean = "1.088 GeV",DATARms = "0.6525 GeV",DATAEntries = 15236085,SherpaMean = "1.096 GeV",SherpaRms = "0.7156 GeV",SherpaEntries = "11550796", HerwigMean = "1.014 GeV", HerwigRms = "0.6060 GeV", HerwigEntries = "23423", y_max = 3000000, ratio_y_max = 2, ratio_y_min = 0
+                           )
+
+canvas17,legend17 = plotStackedHist(legendx = "legend17", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "trk_pt_tight_Zpt1-5",
+                           title="Comparison of Track Pt with All Cuts in 1 < Zpt < 5 GeV region",
+                           x_label = "Track Pt / GeV",
+                           y_label = "Number of entries / 0.1 GeV",
+                           PPMean = "1.088 GeV", PPRms = "0.6528 GeV",PPEntries = 55547204,DATAMean = "1.094 GeV",DATARms = "0.6598 GeV",DATAEntries = 52527765,SherpaMean = "1.097 GeV",SherpaRms = "0.7155 GeV",SherpaEntries = "40887195", HerwigMean = "1.007 GeV", HerwigRms = "0.5993 GeV", HerwigEntries = "18429", y_max = 10000000, ratio_y_max = 2, ratio_y_min = 0
+                           )
+
+canvas18,legend18 = plotStackedHist(legendx = "legend18", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "trk_pt_tight_Zpt>5",
+                           title="Comparison of Track Pt with All Cuts in Zpt > 5 GeV region",
+                           x_label = "Track Pt / GeV",
+                           y_label = "Number of entries / 0.1 GeV",
+                           PPMean = "1.123 GeV", PPRms = "0.7036 GeV",PPEntries = 54979968,DATAMean = "1.146 GeV",DATARms = "0.7329 GeV",DATAEntries = 55317874,SherpaMean = "1.141 GeV",SherpaRms = "0.7715 GeV",SherpaEntries = "43505346", HerwigMean = "1.018 GeV", HerwigRms = "0.6084 GeV", HerwigEntries = "236", y_max = 10000000, ratio_y_max = 2, ratio_y_min = 0
+                           )
+
+#MEAN TRACK PT TIGHT REQUIREMENT
+canvas19,legend19 = plotStackedHist(legendx = "legend19", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "trk_pt_tight_Zpt<1_NTrk0-5",
+                           title="Comparison of Track Pt with All Cuts in Zpt < 1 GeV region for events with 0-5 tracks",
+                           x_label = "Trk Pt / GeV",
+                           y_label = "Number of entries / 0.1 GeV",
+                           PPMean = "0.8643 GeV", PPRms = "0.4523 GeV",PPEntries = 175265,DATAMean = "0.9049 GeV",DATARms = "0.4733 GeV",DATAEntries = 175307,SherpaMean = "0.9353 GeV",SherpaRms = "0.5662 GeV",SherpaEntries = "258668", HerwigMean = "0.8435 GeV", HerwigRms = "0.4400 GeV", HerwigEntries = "2915", y_max = 150000, ratio_y_max = 10, ratio_y_min = 0
+                           )
+
+canvas20,legend20 = plotStackedHist(legendx = "legend20", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "trk_pt_tight_Zpt1-5_NTrk0-5",
+                           title="Comparison of Track Pt with All Cuts in 1 < Zpt < 5 GeV region for events with 0-5 tracks",
+                           x_label = "Trk Pt / GeV",
+                           y_label = "Number of entries / 0.1 GeV",
+                           PPMean = "0.8836 GeV", PPRms = "0.4789 GeV",PPEntries = 572729,DATAMean = "0.9205 GeV",DATARms = "0.4976 GeV",DATAEntries = 544664,SherpaMean = "0.9417 GeV",SherpaRms = "0.5676 GeV",SherpaEntries = "922674", HerwigMean = "0.8444 GeV", HerwigRms = "0.4378 GeV", HerwigEntries = "2315", y_max = 500000, ratio_y_max = 10, ratio_y_min = 0
+                           )
+
+canvas21,legend21 = plotStackedHist(legendx = "legend21", SherpaName = "MC_Sherpa_Last.root", HerwigName = "MC_Herwig_Last.root",dataName = "DATA_Last.root", PPName = "MC_Powheg_Last.root", hist_id = "trk_pt_tight_Zpt>5_NTrk0-5",
+                           title="Comparison of Track Pt with All Cuts in Zpt > 5 GeV region for events with 0-5 tracks",
+                           x_label = "Trk Pt / GeV",
+                           y_label = "Number of entries / 0.1 GeV",
+                           PPMean = "1.025 GeV", PPRms = "0.6934 GeV",PPEntries = 385251,DATAMean = "1.023 GeV",DATARms = "0.6559 GeV",DATAEntries = 318199,SherpaMean = "1.062 GeV",SherpaRms = "0.7298 GeV",SherpaEntries = "672259", HerwigMean = "0.8584 GeV", HerwigRms = "0.4820 GeV", HerwigEntries = "32", y_max = 500000, ratio_y_max = 10, ratio_y_min = 0
+                           )
+#temp=r.TFile("StackedPlots/"+ hist_id , "RECREATE")
+#print(canvas,_)
+'''
+
+# TRK N LOW BIN
+canvas1,legend1 = plotStackedHist(legendx = "legend1", SherpaName = "",dataName = "data_UEObs_LowBin.root", PPName = "MC_Powheg_Last_LowBin.root", hist_id = "trk_n_Zpt<1_lowbin",
+                           title="Comparison of Number of Tracks in Low Bins with All Cuts in Zpt < 1 GeV region",
+                           x_label = "Number of Tracks",
+                           y_label = "Number of entries / Bin",
+                           PPMean = 3.413, PPRms = 1.457,PPEntries = 637203,DATAMean = 2.000,DATARms = 2.000,DATAEntries = 554570, y_max = 4, ratio_y_max = 2, ratio_y_min = 0
+                           )
+
+canvas2,legend2 = plotStackedHist(legendx = "legend2", SherpaName = "",dataName = "data_UEObs_LowBin.root", PPName = "MC_Powheg_Last_LowBin.root", hist_id = "trk_n_Zpt1-2_lowbin",
+                           title="Comparison of Number of Tracks in Low Bins with All Cuts in 1 < Zpt < 2 GeV region",
+                           x_label = "Number of Tracks",
+                           y_label = "Number of entries / Bin",
+                           PPMean = 4.126, PPRms = 0.816,PPEntries = 672641,DATAMean = 4.000,DATARms = 0.817,DATAEntries = 583051, y_max = 4, ratio_y_max = 2, ratio_y_min = 0
+                           )
+
+canvas3,legend3 = plotStackedHist(legendx = "legend3", SherpaName = "",dataName = "data_UEObs_LowBin.root", PPName = "MC_Powheg_Last_LowBin.root", hist_id = "trk_n_Zpt2-3_lowbin",
+                           title="Comparison of Number of Tracks in Low Bins with All Cuts in 2 < Zpt < 3 GeV region",
+                           x_label = "Number of Tracks",
+                           y_label = "Number of entries / Bin",
+                           PPMean = 3.048, PPRms = 1.479,PPEntries = 584451,DATAMean = 4.000,DATARms = 1.000,DATAEntries = 503191, y_max = 4, ratio_y_max = 2, ratio_y_min = 0
+                           )
+
+canvas4,legend4 = plotStackedHist(legendx = "legend4", SherpaName = "",dataName = "data_UEObs_LowBin.root", PPName = "MC_Powheg_Last_LowBin.root", hist_id = "trk_n_Zpt3-4_lowbin",
+                           title="Comparison of Number of Tracks in Low Bins with All Cuts in 3 < Zpt < 4 GeV region",
+                           x_label = "Number of Tracks",
+                           y_label = "Number of entries / Bin",
+                           PPMean = 3.527, PPRms = 0.996,PPEntries = 494790,DATAMean = 5.000,DATARms = 0.000,DATAEntries = 426191, y_max = 4, ratio_y_max = 2, ratio_y_min = 0
+                           )
+
+canvas5,legend5 = plotStackedHist(legendx = "legend5", SherpaName = "",dataName = "data_UEObs_LowBin.root", PPName = "MC_Powheg_Last_LowBin.root", hist_id = "trk_n_Zpt4-5_lowbin",
+                           title="Comparison of Number of Tracks in Low Bins with All Cuts in 4 < Zpt < 5 GeV region",
+                           x_label = "Number of Tracks",
+                           y_label = "Number of entries / Bin",
+                           PPMean = 2.107, PPRms = 0.982,PPEntries = 411078,DATAMean = 4.333,DATARms = 0.471,DATAEntries = 353165, y_max = 4, ratio_y_max = 2, ratio_y_min = 0
+                           )
+
+canvas6,legend6 = plotStackedHist(legendx = "legend6", SherpaName = "",dataName = "data_UEObs_LowBin.root", PPName = "MC_Powheg_Last_LowBin.root", hist_id = "trk_n_Zpt5-10_lowbin",
+                           title="Comparison of Number of Tracks in Low Bins with All Cuts in 5 < Zpt < 10 GeV region",
+                           x_label = "Number of Tracks",
+                           y_label = "Number of entries / Bin",
+                           PPMean = 4.107, PPRms = 1.232,PPEntries = 1160286,DATAMean = 5.000,DATARms = 0.000,DATAEntries = 1009541, y_max = 4, ratio_y_max = 2, ratio_y_min = 0
+                           )
+
+#NUMBER OF TRACKS WITH TIGHT REQUIREMENT LOW BIN
+canvas7,legend7 = plotStackedHist(legendx = "legend7", SherpaName = "",dataName = "data_UEObs_LowBin.root", PPName = "MC_Powheg_Last_LowBin.root", hist_id = "trk_tight_n_Zpt<1_lowbin",
+                           title="Comparison of Number of first and second pass tracks passing tight requirement in Low Bins with All Cuts in Zpt < 1 GeV region",
+                           x_label = "Number of Tracks",
+                           y_label = "Number of entries / Bin",
+                           PPMean = 2.569, PPRms = 1.678,PPEntries = 637203,DATAMean = 2.866,DATARms = 1.635,DATAEntries = 554570, y_max = 20000, ratio_y_max = 2, ratio_y_min = 0.5
+                           )
+
+canvas8,legend8 = plotStackedHist(legendx = "legend8", SherpaName = "",dataName = "data_UEObs_LowBin.root", PPName = "MC_Powheg_Last_LowBin.root", hist_id = "trk_tight_n_Zpt1-2_lowbin",
+                           title="Comparison of Number of first and second pass tracks passing tight requirement in Low Bins with All Cuts 1 < Zpt < 2 GeV region",
+                           x_label = "Number of Tracks",
+                           y_label = "Number of entries / Bin",
+                           PPMean = 2.611, PPRms = 1.669,PPEntries = 672641,DATAMean = 2.928,DATARms = 1.620,DATAEntries = 583051, y_max = 20000, ratio_y_max = 2, ratio_y_min = 0.5
+                           )
+
+canvas9,legend9 = plotStackedHist(legendx = "legend9", SherpaName = "",dataName = "data_UEObs_LowBin.root", PPName = "MC_Powheg_Last_LowBin.root", hist_id = "trk_tight_n_Zpt2-3_lowbin",
+                           title="Comparison of Number of first and second pass tracks passing tight requirement in Low Bins with All Cuts 2 < Zpt < 3 GeV region",
+                           x_label = "Number of Tracks",
+                           y_label = "Number of entries / Bin",
+                           PPMean = 2.673, PPRms = 1.652,PPEntries = 584451,DATAMean = 3.013,DATARms = 1.582,DATAEntries = 503191, y_max = 20000, ratio_y_max = 2, ratio_y_min = 0.5
+                           )
+
+canvas10,legend10 = plotStackedHist(legendx = "legend10", SherpaName = "",dataName = "data_UEObs_LowBin.root", PPName = "MC_Powheg_Last_LowBin.root", hist_id = "trk_tight_n_Zpt3-4_lowbin",
+                           title="Comparison of Number of first and second pass tracks passing tight requirement in Low Bins with All Cuts 3 < Zpt < 4 GeV region",
+                           x_label = "Number of Tracks",
+                           y_label = "Number of entries / Bin",
+                           PPMean = 2.748, PPRms = 1.631,PPEntries = 494790,DATAMean = 3.077,DATARms = 1.556,DATAEntries = 426191, y_max = 20000, ratio_y_max = 2, ratio_y_min = 0.5
+                           )
+
+canvas11,legend11 = plotStackedHist(legendx = "legend11", SherpaName = "",dataName = "data_UEObs_LowBin.root", PPName = "MC_Powheg_Last_LowBin.root", hist_id = "trk_tight_n_Zpt4-5_lowbin",
+                           title="Comparison of Number of first and second pass tracks passing tight requirement in Low Bins with All Cuts 4 < Zpt < 5 GeV region",
+                           x_label = "Number of Tracks",
+                           y_label = "Number of entries / Bin",
+                           PPMean = 2.823, PPRms = 1.610,PPEntries = 411078,DATAMean = 3.148,DATARms = 1.518,DATAEntries = 353165, y_max = 20000, ratio_y_max = 2, ratio_y_min = 0.5
+                           )
+
+canvas12,legend12 = plotStackedHist(legendx = "legend12", SherpaName = "",dataName = "data_UEObs_LowBin.root", PPName = "MC_Powheg_Last_LowBin.root", hist_id = "trk_tight_n_Zpt5-10_lowbin",
+                           title="Comparison of Number of first and second pass tracks passing tight requirement in Low Bins with All Cuts 5 < Zpt < 10 GeV region",
+                           x_label = "Number of Tracks",
+                           y_label = "Number of entries / Bin",
+                           PPMean = 3.024, PPRms = 1.556,PPEntries = 1160286,DATAMean = 3.292,DATARms = 1.474,DATAEntries = 1009541, y_max = 20000, ratio_y_max = 2, ratio_y_min = 0.5
+                           )
+'''
+f = r.TFile("StackedPlots/FINALSTACKS.root","RECREATE")
+
+
+
+canvas1.Write()
+canvas2.Write()
+canvas3.Write()
+canvas4.Write()
+canvas5.Write()
+canvas6.Write()
+
+canvas7.Write()
+canvas8.Write()
+canvas9.Write()
+canvas10.Write()
+canvas11.Write()
+canvas12.Write()
+
+canvas13.Write()
+canvas14.Write()
+canvas15.Write()
+canvas16.Write()
+canvas17.Write()
+canvas18.Write()
+
+canvas19.Write()
+canvas20.Write()
+canvas21.Write()
+
+'''
+
+canvas1.Write()
+canvas2.Write()
+canvas3.Write()
+canvas4.Write()
+canvas5.Write()
+canvas6.Write()
+
+canvas7.Write()
+canvas8.Write()
+canvas9.Write()
+canvas10.Write()
+canvas11.Write()
+canvas12.Write()
+'''
+f.Close()
