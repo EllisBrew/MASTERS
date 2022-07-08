@@ -1,0 +1,231 @@
+# StackedPlot.py
+# contains some back-end functionality for writing and displaying histograms to the user
+import ROOT as r
+
+import sys
+sys.path.insert(0, "backend") # allow code to be imported from subdirectory
+
+from ShowHistogram import histogramsFromFile
+
+
+def FileCombiner(file1,file2,file3,file4,hist_id):
+
+    try:
+        # Get File 1
+        file1String=file1.replace("out/","").replace(".root","")
+        file1File = r.TFile.Open("../FINALPLOTS/"+file1String+".root","READ")
+
+        combfile = histogramsFromFile(file1File)[0][hist_id]
+        combfile.SetDirectory(0)
+
+        file1File.Close()
+
+        # Get File 2
+        file2String=file2.replace("out/","").replace(".root","")
+        file2File = r.TFile.Open("../FINALPLOTS/"+file2String+".root","READ")
+
+        file2Hist = histogramsFromFile(file2File)[0][hist_id]
+        file2Hist.SetDirectory(0)
+
+        file2File.Close()
+
+        # Get File 3
+        file3String=file3.replace("out/","").replace(".root","")
+        file3File = r.TFile.Open("../FINALPLOTS/"+file3String+".root","READ")
+
+        file3Hist = histogramsFromFile(file3File)[0][hist_id]
+        file3Hist.SetDirectory(0)
+
+        file3File.Close()
+
+        # Get File 4
+        file4String=file4.replace("out/","").replace(".root","")
+        file4File = r.TFile.Open("../FINALPLOTS/"+file4String+".root","READ")
+
+        file4Hist = histogramsFromFile(file4File)[0][hist_id]
+        file4Hist.SetDirectory(0)
+
+        file4File.Close()
+        '''
+        # Get File 5
+        file5String=file5.replace("out/","").replace(".root.root","")
+        file5File = r.TFile.Open("out/outputHists/"+file5String+".root.root","READ")
+
+        file5Hist = histogramsFromFile(file5File)[0][hist_id]
+        file5Hist.SetDirectory(0)
+
+        file5File.Close()
+
+        # Get File 6
+        file6String=file6.replace("out/","").replace(".root.root","")
+        file6File = r.TFile.Open("out/outputHists/"+file6String+".root.root","READ")
+
+        file6Hist = histogramsFromFile(file6File)[0][hist_id]
+        file6Hist.SetDirectory(0)
+
+        file6File.Close()
+
+        # Get File 7
+        file7String=file7.replace("out/","").replace(".root.root","")
+        file7File = r.TFile.Open("out/outputHists/"+file7String+".root.root","READ")
+
+        file7Hist = histogramsFromFile(file7File)[0][hist_id]
+        file7Hist.SetDirectory(0)
+
+        file7File.Close()
+
+        # Get File 8
+        file8String=file8.replace("out/","").replace(".root.root","")
+        file8File = r.TFile.Open("out/outputHists/"+file8String+".root.root","READ")
+
+        file8Hist = histogramsFromFile(file8File)[0][hist_id]
+        file8Hist.SetDirectory(0)
+
+        file8File.Close()
+
+        # Get File 9
+        file9String=file9.replace("out/","").replace(".root.root","")
+        file9File = r.TFile.Open("out/outputHists/"+file9String+".root.root","READ")
+
+        file9Hist = histogramsFromFile(file9File)[0][hist_id]
+        file9Hist.SetDirectory(0)
+
+        file9File.Close()
+        ''' 
+
+    #Handles Errors
+    except ReferenceError: # Occurs when dataName is not correct
+        print("File out/"+file1String+".root could not be openned. Check it exists.")
+        return None,None
+    
+    except IndexError: # Occurs when hist_n is too large
+        print("hist_n out of range for file: out/"+file1String+".root")
+        return None,None
+
+
+    combfile.Add(file2Hist)
+    combfile.Add(file3Hist)
+    combfile.Add(file4Hist)
+   
+
+    #canvassum = r.TCanvas("canvassum")
+    #canvassum.cd()
+
+    combfile.Draw()
+    
+    return combfile
+
+
+file1name = "DATA_Last.root"
+file2name = "MC_Herwig_Last.root"
+file3name = "MC_Powheg_Last.root"
+file4name = "MC_Sherpa_Last.root"
+
+hist_id1 = "mean_trk_pt_tight_Zpt<1"
+hist_id2 = "mean_trk_pt_tight_Zpt<1_NTrk0-5"
+hist_id3 = "mean_trk_pt_tight_Zpt1-5"
+hist_id4 = "mean_trk_pt_tight_Zpt1-5_NTrk0-5"
+hist_id5 = "mean_trk_pt_tight_Zpt>5"
+hist_id6 = "mean_trk_pt_tight_Zpt>5_NTrk0-5"
+
+hist_id7 = "sum_trk_pt_tight_Zpt<1"
+hist_id8 = "sum_trk_pt_tight_Zpt<1_NTrk0-5"
+hist_id9 = "sum_trk_pt_tight_Zpt1-5"
+hist_id10 = "sum_trk_pt_tight_Zpt1-5_NTrk0-5"
+hist_id11 = "sum_trk_pt_tight_Zpt>5"
+hist_id12 = "sum_trk_pt_tight_Zpt>5_NTrk0-5"
+
+hist_id13 = "trk_pt_tight_Zpt<1"
+hist_id14 = "trk_pt_tight_Zpt<1_NTrk0-5"
+hist_id15 = "trk_pt_tight_Zpt1-5"
+hist_id16 = "trk_pt_tight_Zpt1-5_NTrk0-5"
+hist_id17 = "trk_pt_tight_Zpt>5"
+hist_id18 = "trk_pt_tight_Zpt>5_NTrk0-5"
+hist_id19 = "trk_tight_n_Zpt<1"
+hist_id20 = "trk_tight_n_Zpt1-5"
+hist_id21 = "trk_tight_n_Zpt>5"
+
+'''
+hist_id1 = "trk_n_Zpt<1_lowbin"
+hist_id2 = "trk_n_Zpt1-2_lowbin"
+hist_id3 = "trk_n_Zpt2-3_lowbin"
+hist_id4 = "trk_n_Zpt3-4_lowbin"
+hist_id5 = "trk_n_Zpt4-5_lowbin"
+hist_id6 = "trk_n_Zpt5-10_lowbin"
+
+hist_id7 = "trk_tight_n_Zpt<1_lowbin"
+hist_id8 = "trk_tight_n_Zpt1-2_lowbin"
+hist_id9 = "trk_tight_n_Zpt2-3_lowbin"
+hist_id10 = "trk_tight_n_Zpt3-4_lowbin"
+hist_id11 = "trk_tight_n_Zpt4-5_lowbin"
+hist_id12 = "trk_tight_n_Zpt5-10_lowbin"
+
+'''
+canvassum1 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id1)
+canvassum2 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id2)
+canvassum3 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id3)
+canvassum4 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id4)
+canvassum5 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id5)
+canvassum6 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id6)
+canvassum7 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id7)
+canvassum8 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id8)
+canvassum9 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id9)
+
+canvassum10 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id10)
+canvassum11 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id11)
+canvassum12 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id12)
+canvassum13 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id13)
+canvassum14 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id14)
+canvassum15 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id15)
+canvassum16 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id16)
+canvassum17 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id17)
+canvassum18 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id18)
+canvassum19 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id19)
+
+canvassum20 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id20)
+canvassum21 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, file4 = file4name, hist_id = hist_id21)
+
+'''
+canvassum1 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name,hist_id = hist_id1)
+canvassum2 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name,hist_id = hist_id2)
+canvassum3 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name,hist_id = hist_id3)
+canvassum4 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name,hist_id = hist_id4)
+canvassum5 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name,hist_id = hist_id5)
+canvassum6 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name,hist_id = hist_id6)
+canvassum7 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name,hist_id = hist_id7)
+canvassum8 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name,hist_id = hist_id8)
+canvassum9 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name,hist_id = hist_id9)
+
+canvassum10 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name,hist_id = hist_id10)
+canvassum11 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name,hist_id = hist_id11)
+canvassum12 = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name,hist_id = hist_id12)
+'''
+o = r.TFile("StackedPlots/SherpaComb.root","RECREATE")
+
+
+canvassum1.Write()
+canvassum2.Write()
+canvassum3.Write()
+canvassum4.Write()
+canvassum5.Write()
+canvassum6.Write()
+canvassum7.Write()
+canvassum8.Write()
+canvassum9.Write()
+
+canvassum10.Write()
+canvassum11.Write()
+canvassum12.Write()
+canvassum13.Write()
+canvassum14.Write()
+canvassum15.Write()
+canvassum16.Write()
+canvassum17.Write()
+canvassum18.Write()
+canvassum19.Write()
+
+canvassum20.Write()
+canvassum21.Write()
+
+
+o.Close()
