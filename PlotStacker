@@ -1,0 +1,271 @@
+# ShowHistogram.py
+# contains some back-end functionality for writing and displaying histograms to the user
+import ROOT as r
+
+import sys
+sys.path.insert(0, "backend") # allow code to be imported from subdirectory
+
+from ShowHistogram import histogramsFromFile
+
+hist_id = "sum_pt_basic1"  
+'''
+def FileCombiner(file1,file2,file3, hist_id, title_sum, x_label_sum, y_label_sum):
+    try:
+        # Get File 1
+        file1string=file1.replace("out/","").replace(".root","")
+        file1File = r.TFile.Open("out/"+file1string+".root","READ")
+        file1Hist = histogramsFromFile(file1File)[0][hist_id]
+        file1Hist.SetDirectory(0)
+        combfiles = histogramsFromFile(file1File)[0][hist_id]
+        combfiles.SetDirectory(0)
+        file1File.Close()
+
+        # Get File 2
+        file2string=file2.replace("out/","").replace(".root","")
+        file2File = r.TFile.Open("out/"+file2string+".root","READ")
+        file2Hist = histogramsFromFile(file2File)[0][hist_id]
+        file2Hist.SetDirectory(0)
+        file2File.Close()
+
+        # Get File 3
+        file3string=file1.replace("out/","").replace(".root","")
+        file3File = r.TFile.Open("out/"+file3string+".root","READ")
+        file3Hist = histogramsFromFile(file3File)[0][hist_id]
+        file3Hist.SetDirectory(0)
+        file3File.Close()
+
+
+    #Handles Errors
+    except ReferenceError: # Occurs when dataName is not correct
+        print("File out/"+file1string+".root could not be opened. Check it exists.")
+        return None,None 
+
+    except IndexError: #Occurs when hist_n is too large
+        print("hist_n out of range for file: out/"+file1string+".root")
+        return None,None
+
+
+    combfiles.Add(file2Hist)
+    combfiles.Add(file3Hist)
+
+
+    canvassum = r.TCanvas("canvassum")
+    canvassum.cd()
+
+    combfiles.SetTitle(title_sum)
+    combfiles.GetXaxis().SetTitle(x_label_sum)
+    combfiles.GetYaxis().SetTitle(y_label_sum)
+    combfiles.SetLineColor(r.kBlack)
+    combfiles.SetLineWidth(1)
+
+    combfiles.Draw()
+
+    canvassum.Print("combined_data_files.root")
+    canvassum.Draw()
+
+    return combfiles
+
+file1name = "Zmumu_2015.root"
+file2name = "Zmumu_2017.root"
+file3name = "Zmumu_2018.root"
+
+canvassumout = FileCombiner(file1 = file1name, file2 = file2name, file3 = file3name, hist_id = hist_id,
+                 title_sum = "MC: Pt Track Difference Distribution with Optimal Cuts applied",
+                 x_label_sum = "Zpt / GeV",
+                 y_label_sum = "Number of Entries",
+                 )
+
+o = r.TFile("StackedPlots/" +hist_id+ "sum.root","RECREATE")
+canvassumout.Write()
+o.Close()
+
+
+'''
+
+
+
+def plotStackedHist(dataName,MCNames,hist_id,x_min = 0, x_max = 140e3, y_min = 0, y_max = 150e3,title="",x_label="",y_label="Number of entries/bin",nameArray = None, showLegend=True,colourArray=None,legend_text_size=None,log_y = False):
+   
+    try:
+        # Get DATA histogram
+        dataString=dataName.replace("out/","").replace(".root","")
+        dataFile = r.TFile.Open("StackedPlots/"+dataString+".root","READ")
+        dataHist = histogramsFromFile(dataFile)[0][hist_id]
+        dataHist.SetDirectory(0)
+        ratio = histogramsFromFile(dataFile)[0][hist_id]
+        ratio.SetDirectory(0)
+        dataFile.Close()
+   
+    #Handles Errors
+    except ReferenceError: # Occurs when dataName is not correct
+        print("File out/"+dataString+".root could not be openned. Check it exists.")
+        return None,None
+   
+    except IndexError: # Occurs when hist_n is too large
+        print("hist_n out of range for file: out/"+dataString+".root")
+        return None,None
+       
+     
+    # Make a canvas and stacked histogram
+    canvasstack = r.TCanvas("canvasstack")
+    canvasstack.cd()
+    #hs = r.THStack("hs","Stacked plot")
+
+    latex = r.TLatex ()
+    latex.SetNDC()
+    latex.SetTextSize(0.03)
+    # Configure and plot the 2lep data
+    dataHist.SetTitle(title)
+    dataHist.GetXaxis().SetTitle(x_label)
+    dataHist.GetYaxis().SetTitle(y_label)
+    dataHist.SetStats(0)
+    dataHist.SetLineColor(r.kBlack)
+    dataHist.SetLineWidth(1)
+    #dataHist.SetMarkerColor(r.kBlack)
+    #dataHist.SetMarkerStyle(21)
+    #dataHist.SetMarkerSize(0.5)
+    #dataHist.Draw("e")
+
+    # Create a legend
+    #legend = r.TLegend(0.7,0.60,0.9,0.85)
+   
+    if colourArray == None:
+        colourArray = [r.kRed,r.kBlue]
+   
+    #Loops around each provided MC and stacks onto hs
+    for i in range(len(MCNames)):    
+        try:
+            # Get MC histograms
+            MCString=MCNames[i].replace("out/","").replace(".root","")
+            file = r.TFile.Open("StackedPlots/"+MCString+".root","READ")
+            mcHist = histogramsFromFile(file)[0][hist_id]
+            mcHist.SetDirectory(0)
+            file.Close()
+       
+        # Handles Errors
+        except ReferenceError: # Occurs when MCNames[i] is not correct
+            print("File out/"+MCString+".root could not be openned. Check it exists.")
+            return None,None
+   
+        except IndexError: # Occurs when hist_id does not exist
+            print("hist_id does not exist for file: out/"+MCString+".root")
+            return None,None
+
+        # Add MC contributions to the stacked histogram
+        mcHist.SetTitle(title)
+        mcHist.SetLineColor(colourArray[i%len(colourArray)])
+        mcHist.SetFillColor(colourArray[i%len(colourArray)])
+        mcHist.Scale(dataHist.Integral()/mcHist.Integral())
+        #hs.Add(mcHist,"h")
+       
+        #Add MC histogram to legend
+        #if nameArray == None:
+        #    legend.AddEntry(mcHist,MCString)
+        #else:
+        #    legend.AddEntry(mcHist,nameArray[i+1])
+
+       
+    # Draw the stacked plot onto the canvas
+    #hs.Draw("same,hist")
+    #dataHist.Draw("e,same")
+   
+    # Edit the x axis range of both stacked plot and data
+    #hs.GetXaxis().SetRangeUser(x_min,x_max)
+    dataHist.GetXaxis().SetRangeUser(x_min,x_max)
+    #hs.GetYaxis().SetRangeUser(y_min,y_max)
+    dataHist.GetYaxis().SetRangeUser(y_min,y_max)
+
+    #ratio.Add(mcHist,-1)
+    ratio.Divide(mcHist)
+    ratio.SetLineColor(r.kRed)
+    ratio.SetStats(0)
+    ratio.SetTitle("Ratio of DATA-MC")
+
+    
+    '''
+    #Add Data histogram to legend
+    if nameArray == None:
+        legend.AddEntry(dataHist,dataString)
+    else:
+        legend.AddEntry(dataHist,nameArray[0])
+    legend.SetLineWidth(0)
+    if legend_text_size != None:
+        legend.SetTextSize(legend_text_size)
+    legend.Draw("same")
+   
+    if log_y:
+        canvasstack.SetLogy()
+    
+    canvasstack.Draw()
+    '''
+    # Plot the canvas
+    canvasstack.Clear()
+    pad1 = r.TPad("pad1","pad1",0,0.4,1,1)
+    pad1.Draw()
+    pad1.cd()
+    mcHist.Draw("h")
+    dataHist.Draw("pe,same")
+
+    legend = r.TLegend(0.7,0.6,0.85,0.75)
+    legend.AddEntry(mcHist,"MC")
+    legend.AddEntry(dataHist,"DATA")
+    legend.SetLineWidth(0)
+    legend.Draw("same")
+
+    latex.DrawText(0.6,0.5, "MC Detector Mean = 4.889 GeV")
+    latex.DrawText(0.6,0.45, "ATLAS Data Mean = 4.940 GeV")
+    latex.DrawText(0.6,0.4, "MC Detector Std = 4.300 GeV")
+    latex.DrawText(0.6, 0.35, "ATLAS Data Std = 4.339 GeV")
+    latex.DrawText(0.6, 0.3, "MC Detector Entries = 2572223")
+    latex.DrawText(0.6, 0.25, "ATLAS Data Entries = 2561970")
+
+    canvasstack.cd()
+    pad2 = r.TPad   ("pad2","pad2", 0,0,1,0.4)
+    pad2.Draw()
+    pad2.cd()
+    ratio.Draw("pe")
+
+    canvasstack.Print('Z_Pt.root')
+    canvasstack.Draw()
+
+    #Shows the legend if showLegend == True
+    if showLegend:
+        return canvasstack,(mcHist,legend)
+    else: # Legend not plotted if not returned
+        return canvasstack,mcHist
+
+
+
+
+
+# Filenames for plotting
+dataFilename = "sum_pt_basic1sumDATA.root"
+#StackedFilenames = ["data_2018_0.root","Zmumu_2017_0.root",]
+StackedFilenames = ["sum_pt_basic1sumMC.root"]
+
+
+  # Which histogram to plot from each file
+
+# To use custom labels/colours, uncomment lines below and edit plotStackedHist(...) inputs
+#nameArray = ["Data","Zee MC","Zmumu MC","Ztautau MC"]
+#colourArray = [r.kBlack,r.kBlue,r.kRed]
+
+#Plot Stacked Histogram
+canvas,_ = plotStackedHist(dataName = dataFilename,
+                           MCNames = StackedFilenames,
+                           hist_id = hist_id,
+                           x_min = 0e3, x_max = 140e3,
+                           y_min = 0e3, y_max = 150e3,
+                           title="Stacked plot of Zpt distributions for DATA and MC with Optimal Cuts applied",
+                           x_label = "Zpt / GeV",
+                           y_label = "Number of entries/bin",
+                           nameArray = None,
+                           colourArray = None)
+
+
+#temp=r.TFile("StackedPlots/"+ hist_id , "RECREATE")
+#print(canvas,_)
+
+f = r.TFile("StackedPlots/" + hist_id + ".root","RECREATE")
+canvas.Write()
+f.Close()
