@@ -1,0 +1,151 @@
+// Header guard to ensure file is imported properly
+#ifndef Analysis
+#define Analysis
+
+// Include the file that lets the program know about the data
+#include "backend/CLoop.h"
+#include <stdlib.h>
+#include <iostream>
+#include <vector>
+#include <algorithm>
+//#include <bits/stdc++.h>
+#include <utility>
+
+
+
+int inside_jets(TLorentzVector * test_jet,TLorentzVector * j1, TLorentzVector * j2){
+  double delta_y_j1j2=abs(j1->Rapidity()-j2->Rapidity());
+  double delta_y_j1test=abs(j1->Rapidity()-test_jet->Rapidity());
+  double delta_y_j2test=abs(j2->Rapidity()-test_jet->Rapidity());
+  if(delta_y_j1test>delta_y_j1j2 || delta_y_j2test>delta_y_j1j2){return 1;}
+  else{return 0;}
+}
+
+void CLoop::Book(double lumFactor) {
+  // Define histograms
+    h_lep1_pt_basic = new TH1F("lep1_pt_basic","Lep 1 pT",200,0,200);
+    h_lep2_pt_basic = new TH1F("lep2_pt_basic","Lep 2 pT",200,0,200);
+    h_inv_mass_basic = new TH1F("inv_mass_basic","Invariant mass di-lepton system",240,0,240);
+    h_delta_phi_basic = new TH1F("delta_phi_basic", "Phi Star Distribution", 100,0,0.02);
+    h_sum_pt_basic1 = new TH1F("sum_pt_basic1", "Pt Track Difference Distribution / GeV", 200,0,0.5);
+    h_sum_pt_basic2 = new TH1F("sum_pt_basic2", "Track Pt Error Distribution / GeV", 200,0,2);
+
+    //h_Z_pt_truth_basic = new TH1F("Z_pt_truth_basic", "Z pt truth", 200,0,100);
+}
+
+void CLoop::Fill(double weight, int z_sample) {
+  double pi=TMath::Pi();
+  // Charges and lepton ID
+  bool muon_id=muon_0_id_tight && muon_1_id_tight;
+  float q_mu0=muon_0_q;
+  float q_mu1=muon_1_q;
+  //Define delta phi
+  double delta_phi{};
+  delta_phi = muon_0_p4->Phi()-muon_1_p4->Phi();
+  //Define delta phi truth
+  //double delta_phi_truth{};
+  //delta_phi_truth = muon_0_matched_p4->Phi()-muon_1_matched_p4->Phi();
+  //Define phi_acop
+  double phi_acop{};
+  phi_acop = M_PI - delta_phi;
+  //Define phi_acop_truth
+  //double phi_acop_truth{};
+  //phi_acop_truth = M_PI - delta_phi_truth;
+  //define phi acop track
+  double acop_track{};
+  acop_track = M_PI - (muon_0_trk_p4->Phi() - muon_1_trk_p4->Phi());
+
+  //Define p_sum
+  double p_vecsum{};
+  double px_sum = muon_0_p4->Pt()*cos(muon_0_p4->Phi()) + muon_1_p4->Pt()*cos(muon_1_p4->Phi());
+  double py_sum = muon_0_p4->Pt()*sin(muon_0_p4->Phi()) + muon_1_p4->Pt()*sin(muon_1_p4->Phi());
+  px_sum = pow(px_sum, 2);
+  py_sum = pow(py_sum, 2);
+  p_vecsum = abs(sqrt(px_sum + py_sum));
+
+  //Define p_sum_truth
+  //double p_vecsum_truth{};
+  //double px_sum_truth = muon_0_matched_p4->Pt()*cos(muon_0_matched_p4->Phi()) + muon_1_matched_p4->Pt()*cos(muon_1_matched_p4->Phi());
+  //double py_sum_truth = muon_0_matched_p4->Pt()*sin(muon_0_matched_p4->Phi()) + muon_1_matched_p4->Pt()*sin(muon_1_matched_p4->Phi());
+  //px_sum_truth = pow(px_sum_truth, 2);
+  //py_sum_truth = pow(py_sum_truth, 2);
+  //p_vecsum_truth = abs(sqrt(px_sum_truth + py_sum_truth));
+  
+
+  // Define invariant mass
+  double inv_mass{};
+  inv_mass=sqrt(2*muon_0_p4->Pt()*muon_1_p4->Pt()*(cosh(muon_0_p4->Eta()-muon_1_p4->Eta())-cos(muon_0_p4->Phi()-muon_1_p4->Phi())));
+  //Define Invariant mass truth
+  //double inv_mass_truth{};
+  //inv_mass_truth = sqrt(2*muon_0_matched_p4->Pt()*muon_1_matched_p4->Pt()*(cosh(muon_0_matched_p4->Eta()-muon_1_matched_p4->Eta())-cos(muon_0_matched_p4->Phi()-muon_1_matched_p4->Phi())));
+  //define invariant mass track
+  double inv_mass_track{};
+  inv_mass_track = sqrt(2*muon_0_trk_p4->Pt()*muon_1_trk_p4->Pt()*(cosh(muon_0_trk_p4->Eta()-muon_1_trk_p4->Eta())-cos(muon_0_trk_p4->Phi()-muon_1_trk_p4->Phi())));
+  //define pseudorapidity
+  double prapid0 = muon_0_p4->Eta();
+  double prapid1 = muon_1_p4->Eta();
+  //define pseudorapidity truth
+  //double prapid0_truth = muon_0_matched_p4->Eta();
+  //double prapid1_truth = muon_1_matched_p4->Eta();
+  //Define Phi star
+  double theta_star{};
+  theta_star = (acos(tanh((prapid0 - prapid1)/2)));
+  double phi_star{};
+  phi_star = tan(phi_acop/2)*sin(theta_star);
+  //define phi star truth
+  //double theta_star_truth{};
+  //theta_star_truth = (acos(tanh((prapid0_truth - prapid1_truth)/2)));
+  //double phi_star_truth{};
+  //phi_star_truth = tan(phi_acop_truth/2)*sin(theta_star_truth);
+  //define p difference
+  //double p_diff{};
+  //p_diff = p_vecsum_truth - p_vecsum;
+  //define muon track momentum
+  double p_track{};
+  double px_tracksum = muon_0_trk_p4->Pt()*cos(muon_0_trk_p4->Phi()) + muon_1_trk_p4->Pt()*cos(muon_1_trk_p4->Phi());
+  double py_tracksum = muon_0_trk_p4->Pt()*sin(muon_0_trk_p4->Phi()) + muon_1_trk_p4->Pt()*sin(muon_1_trk_p4->Phi());
+  px_tracksum = pow(px_tracksum, 2);
+  py_tracksum = pow(py_tracksum, 2);
+  p_track = abs(sqrt(px_tracksum + py_tracksum));
+
+  //define track phi star
+  double phi_track{};
+  double theta_star_track = acos(tanh((muon_0_trk_p4->Eta() - muon_1_trk_p4->Eta()/2)));
+  phi_track = tan(acop_track/2)*sin(theta_star_track);
+
+  //define track difference
+  double track_diff{};
+  track_diff = p_vecsum - p_track/1e3;
+
+  if (n_muons==2 && q_mu0!=q_mu1 && 66 <= inv_mass && inv_mass <= 116 && abs(phi_star) < 0.004 && p_vecsum < 2 && muon_0_trk_pt_error/1e3 < 0.7 && muon_1_trk_pt_error/1e3 < 0.7){
+
+    //  Filling histos
+    h_sum_pt_basic1->Fill(track_diff, weight);
+
+    //h_Z_pt_truth_basic->Fill((truth_Z_p4->Pt())/1e3, weight);
+    
+  }
+
+
+  if (n_muons==2 && q_mu0!=q_mu1 && 66 <= inv_mass && inv_mass <= 116 && p_vecsum < 2 && abs(phi_star) < 0.004 && track_diff < 0.5){
+
+    //  Filling histos
+    h_sum_pt_basic2->Fill(muon_0_trk_pt_error/1e3, weight);
+
+    //h_Z_pt_truth_basic->Fill((truth_Z_p4->Pt())/1e3, weight);
+    
+  }
+
+  
+  
+}
+void CLoop::Style(double lumFactor) {
+  //Write histograms
+  h_sum_pt_basic1->Write();
+  h_sum_pt_basic2->Write();
+ 
+  //h_Z_pt_truth_basic->Write();
+  
+  
+}
+#endif // End header guard
